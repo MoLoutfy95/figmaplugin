@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Design Token Converter</title>
+      <style>
+        :root{
+          --bg: #1e1e1e;
+          --surface: #252525;
+          --card: rgba(255,255,255,0.03);
+          --muted: #9fb1c9;
+          --text: #e6eef8;
+          --panel: #272727;
+          --input-border: rgba(255,255,255,0.06);
+          --btn-bg: linear-gradient(90deg,#2b67f6,#8b5cf6);
+          --primary: #2563eb;
+          --success: #10b981;
+          --danger: #ef4444;
+          --glass: rgba(255,255,255,0.03);
+        }
+        [data-theme='light']{
+          --bg: #ffffff;
+          --surface: #f7f9fc;
+          --card: rgba(2,6,23,0.04);
+          --muted: #6b7b84;
+          --text: #0b1220;
+          --panel: #f3f4f6;
+          --input-border: rgba(11,42,59,0.06);
+          --btn-bg: linear-gradient(90deg,#1e40af,#6b21a8);
+          --primary: #1e40af;
+          --success: #059669;
+          --danger: #dc2626;
+          --glass: rgba(2,6,23,0.04);
+        }
+
+        *{ box-sizing: border-box; }
+        html,body{ height:100%; }
+        body{ font-family: Inter, 'Segoe UI', Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--text); }
+
+  /* constrained centered container: max-width 600px with equal side padding */
+  .wrap{ width:100%; max-width:600px; margin:0 auto; padding:24px; box-sizing:border-box }
+  .card{ width:100%; background:var(--surface); border-radius:8px; padding:12px; box-shadow: none; border:1px solid var(--glass); }
+  .header{ padding-bottom:8px }
+
+        .header{ display:flex; align-items:center; gap:12px; }
+        .logo{ width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,var(--primary),#8b5cf6); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:16px }
+        .h-title{ font-size:18px; font-weight:700 }
+        .h-sub{ font-size:12px; color:var(--muted) }
+
+  .actions{ margin-left:auto; display:flex; gap:10px; align-items:center }
+  /* sliding toggle */
+  .toggle{ display:inline-block }
+  .toggle input{ display:none }
+  .toggle-label{ display:inline-block; width:56px; height:28px; background:var(--input-border); border-radius:999px; position:relative; cursor:pointer; transition:background .18s }
+  /* knob holds the icon */
+  .toggle-label .toggle-knob{ position:absolute; top:3px; left:3px; width:22px; height:22px; background:rgba(255,255,255,0.06); border-radius:50%; transition:left .18s, background .18s; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text); }
+  /* use inline SVG icons (solid fill via currentColor) */
+  .toggle-label .toggle-knob svg{ width:14px; height:14px; display:block; fill:currentColor }
+  .toggle-label .toggle-knob .icon-sun{ display:none }
+  /* use neutral background for the toggle track, avoid primary color */
+  .toggle input:checked + .toggle-label{ background:var(--input-border) }
+  .toggle input:checked + .toggle-label .toggle-knob{ left:calc(100% - 25px) }
+  .toggle input:checked + .toggle-label .toggle-knob .icon-sun{ display:block }
+  .toggle input:checked + .toggle-label .toggle-knob .icon-moon{ display:none }
+  /* in light mode make the knob icon gray (muted) instead of primary */
+  .toggle input:checked + .toggle-label .toggle-knob{ color:var(--muted) }
+  /* theme-aware knob background: lighter circle in dark mode, darker circle in light mode */
+  [data-theme='light'] .toggle-label .toggle-knob{ background: rgba(0,0,0,0.12); }
+  /* ensure in dark theme the knob remains a subtle light circle */
+  :not([data-theme='light']) .toggle-label .toggle-knob{ background: rgba(255,255,255,0.06); }
+  /* in light mode, make knob icon gray (muted) instead of primary */
+  .toggle input:checked + .toggle-label .toggle-knob{ color:var(--muted) }
+  /* close button: transparent, no background/border, color follows theme text */
+  .close-btn{ background:transparent !important; border:none !important; padding:6px 8px; color:var(--text); font-size:14px; cursor:pointer }
+  .close-btn:hover{ opacity:0.9 }
+
+  /* single-column layout inside the 600px container to keep everything stacked and aligned */
+  .grid{ display:grid; grid-template-columns: 1fr; gap:12px; margin-top:18px }
+
+        /* left */
+        .panel{ background:var(--card); padding:14px; border-radius:12px; border:1px solid var(--glass) }
+  .drop{ border:1px dashed var(--input-border); border-radius:10px; padding:18px; display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center; background:linear-gradient(180deg, transparent, rgba(0,0,0,0.02)); cursor:pointer; text-align:center; transition:border-color 0.2s ease }
+        .drop:hover{ border-color:var(--primary) }
+        .drop h3{ margin:0; font-size:14px; text-align:center }
+        .drop p{ margin:0; color:var(--muted); font-size:12px; text-align:center }
+  .choose{ margin-top:8px; width:100%; display:flex; justify-content:center }
+
+  .chips{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:12px }
+  .chip{ padding:10px 12px; border-radius:10px; background:transparent; border:1px solid var(--input-border); color:var(--text); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:space-between; text-align:left; position:relative }
+        .chip.active{ background:var(--btn-bg); color:white; box-shadow:0 6px 18px rgba(0,0,0,0.25) }
+        .chip input[type="checkbox"]{ position:absolute; right:12px; opacity:0; transition:opacity 0.2s; appearance:none; -webkit-appearance:none; width:16px; height:16px; border:none; background:none; cursor:pointer }
+        .chip.active input[type="checkbox"]{ opacity:1 }
+        .chip.active input[type="checkbox"]::after{ content:'✓'; color:white; font-size:14px; font-weight:bold; line-height:16px; text-align:center; display:block }
+
+  .controls-row{ display:block; margin-top:14px }
+  .controls-row .btn-modern{ width:100%; display:block }
+  .small-actions{ display:flex; gap:8px; margin-top:10px }
+  .small-actions .btn-ghost{ flex:1; min-width:0 }
+  .small-actions .btn-modern{ flex:1; min-width:0 }
+        .btn-modern{ padding:10px 14px; border-radius:10px; border:none; color:white; background:var(--btn-bg); cursor:pointer; box-shadow:0 8px 20px rgba(37,99,235,0.12) }
+  .btn-ghost{ padding:10px 12px; border-radius:10px; background:transparent; border:1px solid var(--input-border); color:var(--text); cursor:pointer }
+  .drop .theme-btn{ margin-top:8px; padding:10px 12px; border-radius:8px; width:100%; display:block; text-align:center }
+  .btn-ghost{ width:100%; }
+
+        /* right */
+        .sidebar{ display:flex; flex-direction:column; gap:12px }
+        .field{ display:flex; flex-direction:column; gap:6px }
+                 .input, textarea{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--input-border); background:var(--panel); color:var(--text) }
+         .small{ font-size:12px; color:var(--muted); margin-bottom:4px }
+        textarea{ min-height:220px; font-family:monospace; font-size:12px }
+
+        .file-card{ display:flex; gap:10px; align-items:center; padding:10px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border:1px solid var(--input-border) }
+        .file-name{ font-weight:600 }
+        .file-meta{ color:var(--muted); font-size:12px }
+
+        #notification{ display:none; position:fixed; left:50%; transform:translateX(-50%); top:18px; padding:10px 16px; border-radius:10px; color:white; font-weight:700; z-index:999 }
+
+        @media (max-width:980px){ .grid{ grid-template-columns: 1fr; } .actions{ margin-left:0 } }
+      </style>
+    </head>
+    <body>
+      <div id="notification"></div>
+      <div class="wrap">
+        <div class="card">
+          <div class="header">
+              <div class="logo">DT</div>
+              <div style="flex:1">
+                <div class="h-title">محول Design Tokens</div>
+                <div class="h-sub">حول Figma tokens إلى CSS, Dart, Kotlin, SwiftUI</div>
+              </div>
+              <div class="actions">
+                <div class="toggle">
+                  <input id="themeToggle" type="checkbox" />
+                  <label class="toggle-label" for="themeToggle"><span class="toggle-knob">
+                    <!-- moon icon -->
+                    <svg class="icon-moon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    <!-- sun icon -->
+                    <svg class="icon-sun" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zM1 13h3v-2H1v2zm10-9h2V1h-2v3zm7.03 2.05l1.79-1.79-1.79-1.79-1.79 1.79 1.79 1.79zM17.24 19.16l1.79 1.79 1.79-1.79-1.79-1.79-1.79 1.79zM20 11v2h3v-2h-3zM11 20h2v3h-2v-3zM4.22 19.78l1.79-1.79-1.79-1.79-1.79 1.79 1.79 1.79zM12 6a6 6 0 100 12 6 6 0 000-12z"/></svg>
+                  </span></label>
+                </div>
+                <button id="closeBtn" class="theme-btn close-btn" title="Close">✖</button>
+              </div>
+            </div>
+
+          <div class="grid">
+            <div>
+              <div class="panel">
+                <div id="dropzone" class="drop">
+                  <div>
+                    <h3 id="drop-title">أفلت ملف JSON</h3>
+                    <p id="drop-text">أو اضغط لاختيار ملف — ملف واحد فقط</p>
+                  </div>
+                  <div class="choose" id="chooseArea">
+                    <button id="browse" class="btn-ghost">اختر ملف</button>
+                  </div>
+                  <input id="file" type="file" accept="application/json" style="display:none" />
+                  <div id="fileCardArea" style="margin-top:12px"></div>
+                </div>
+
+                <div class="chips" role="list">
+                  <label class="chip" id="chip-css">
+                    <span>CSS</span>
+                    <input id="f-css" type="checkbox">
+                  </label>
+                  <label class="chip" id="chip-dart">
+                    <span>Dart</span>
+                    <input id="f-dart" type="checkbox">
+                  </label>
+                  <label class="chip" id="chip-kotlin">
+                    <span>Kotlin</span>
+                    <input id="f-kotlin" type="checkbox">
+                  </label>
+                  <label class="chip" id="chip-swift">
+                    <span>SwiftUI</span>
+                    <input id="f-swift" type="checkbox">
+                  </label>
+                </div>
+
+                                 <div class="controls-row">
+                   <button id="convert" class="btn-modern">حول</button>
+                 </div>
+                 
+                 <!-- Sample JSON button for testing -->
+                 <div style="margin-top:8px; text-align:center;">
+                   <button id="sampleJson" class="btn-ghost" style="font-size:12px; padding:6px 12px;">
+                     📋 تحميل JSON تجريبي
+                   </button>
+                 </div>
+                
+                                 <!-- Action buttons row -->
+                 <div class="action-buttons" style="margin-top:14px; display:flex; gap:8px;">
+                   <button id="export" class="btn-ghost" style="flex:1;">تصدير ZIP</button>
+                   <button id="push" class="btn-modern" style="flex:1;">رفع إلى GitHub</button>
+                 </div>
+                 
+
+
+                <!-- moved token inputs and preview below so everything stacks vertically -->
+                <div class="panel field" style="margin-top:14px">
+                  <label class="small">رمز الوصول الشخصي لـ GitHub</label>
+                  <input id="pat" class="input" placeholder="ghp_xxxxxxxxxxxxxxxxx" />
+                </div>
+                <div class="panel field" style="margin-top:10px">
+                  <label class="small">رابط المستودع</label>
+                  <input id="repo" class="input" placeholder="https://github.com/username/repo" />
+                </div>
+                                 <!-- GitHub configuration -->
+                 <div style="height:12px"></div>
+                 <div class="small-actions" style="margin-top:10px">
+                   <button id="push" class="btn-modern">رفع إلى GitHub</button>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+             <script src="ui.js"></script>
+       <script>
+         // Additional UI logic and initialization
+         const previewEl = document.getElementById('preview');
+
+        // chips
+        const chips = {
+          css: document.getElementById('chip-css'),
+          dart: document.getElementById('chip-dart'),
+          kotlin: document.getElementById('chip-kotlin'),
+          swift: document.getElementById('chip-swift')
+        };
+
+        // wire chips to checkboxes
+        Object.entries(chips).forEach(([k,el])=>{
+          el.addEventListener('click', ()=>{
+            const cb = document.getElementById('f-'+k);
+            cb.checked = !cb.checked;
+            el.classList.toggle('active', cb.checked);
+          });
+        });
+
+        // file handling
+        browse.onclick = () => fileInput.click();
+        drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.style.borderColor = 'var(--primary)'; });
+        drop.addEventListener('dragleave', e=>{ drop.style.borderColor = ''; });
+        drop.addEventListener('drop', e=>{ e.preventDefault(); drop.style.borderColor = ''; const f = e.dataTransfer.files[0]; handleFile(f) });
+        fileInput.onchange = e => handleFile(e.target.files[0]);
+
+        let lastTokensJSON = null;
+        let selectedFile = null;
+
+        function renderFileCard(file){
+          fileCardArea.innerHTML = '';
+          if (!file) return;
+          
+          // تغيير منطقة Choose file لتظهر اسم الملف مع زر الحذف
+          const chooseArea = document.getElementById('chooseArea');
+          chooseArea.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; width:100%; justify-content:center;">
+              <span style="color:var(--text); font-weight:600;">${escapeHtml(file.name)}</span>
+              <button class="icon-btn" id="removeFile" title="Remove file" style="background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px;">✖</button>
+            </div>
+          `;
+          
+          // إضافة event listener لزر الحذف
+          document.getElementById('removeFile').onclick = () => { clearFile(); };
+        }
+
+        function handleFile(f){
+          if (!f) return;
+          if (selectedFile){ showNotification('Only one file allowed, remove first', true); return; }
+          selectedFile = f;
+          renderFileCard(f);
+          const reader = new FileReader();
+            reader.onload = () => {
+              lastTokensJSON = reader.result;
+              if (previewEl) previewEl.value = (lastTokensJSON || '').substring(0, 1000);
+              // Auto-generate on file load
+              const formats = [];
+              if (document.getElementById('f-css').checked) formats.push('css');
+              if (document.getElementById('f-dart').checked) formats.push('dart');
+              if (document.getElementById('f-kotlin').checked) formats.push('kotlin');
+              if (document.getElementById('f-swift').checked) formats.push('swift');
+              if (formats.length) sendGenerate(formats);
+            };
+          reader.readAsText(f);
+        }
+
+  function clearFile(){ 
+    selectedFile = null; 
+    lastTokensJSON = null; 
+    fileInput.value = ''; 
+    fileCardArea.innerHTML = ''; 
+    if (previewEl) previewEl.value = ''; 
+    
+    // إعادة زر Choose file
+    const chooseArea = document.getElementById('chooseArea');
+    chooseArea.innerHTML = '<button id="browse" class="btn-ghost">Choose file</button>';
+    
+    // إعادة ربط event listener للزر الجديد
+    document.getElementById('browse').onclick = () => fileInput.click();
+  }
+
+        // theme handling
+        function setTheme(theme){
+          if (theme === 'light') document.documentElement.setAttribute('data-theme','light');
+          else document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('dtc-theme', theme);
+          if (themeToggle) themeToggle.checked = (theme === 'light');
+        }
+        (function(){ const saved = localStorage.getItem('dtc-theme') || 'dark'; setTheme(saved); })();
+        if (themeToggle) themeToggle.onchange = () => { const newTheme = themeToggle.checked ? 'light' : 'dark'; setTheme(newTheme); };
+  const closeBtn = document.getElementById('closeBtn');
+  if (closeBtn) closeBtn.onclick = () => { parent.postMessage({ pluginMessage: { type: 'close-plugin' } }, '*'); };
+
+        // conversion logic
+        convert.onclick = () => {
+          if (!lastTokensJSON){ showNotification('Choose a JSON file first', true); return; }
+          const formats = [];
+          if (document.getElementById('f-css').checked) formats.push('css');
+          if (document.getElementById('f-dart').checked) formats.push('dart');
+          if (document.getElementById('f-kotlin').checked) formats.push('kotlin');
+          if (document.getElementById('f-swift').checked) formats.push('swift');
+          if (formats.length === 0){ showNotification('Select at least one output format', true); return; }
+          // Ask plugin to generate platform outputs (keeps logic centralized)
+          sendGenerate(formats);
+        };
+
+        // Send generate request to plugin
+        function sendGenerate(formats){
+          try{
+            parent.postMessage({ pluginMessage: { type: 'generate', content: lastTokensJSON, formats } }, '*');
+            showNotification('Generating outputs...');
+          }catch(e){ showNotification('Failed to send generate message: '+(e instanceof Error?e.message:String(e)), true); }
+        }
+
+        window.onmessage = (event) => {
+          const msg = event.data.pluginMessage; if (!msg) return;
+          if (msg.type === 'parsed') window._outputs = msg.outputs;
+          if (msg.type === 'parse-error') showNotification('JSON parse error: ' + msg.error, true);
+          if (msg.type === 'create-zip') createZipAndDownload();
+          if (msg.type === 'generated'){
+            window._outputs = msg.files || {};
+            const first = Object.keys(window._outputs)[0];
+            if (first && previewEl) previewEl.value = window._outputs[first];
+            showNotification('Generation complete');
+            // keep outputs available for export via Export button
+          }
+          if (msg.type === 'generate-error'){
+            showNotification('Generation error: ' + msg.error, true);
+          }
+        };
+
+        exportBtn.onclick = () => { if (!window._outputs) { showNotification('Convert first', true); return; } parent.postMessage({ pluginMessage: { type: 'export-zip' } }, '*'); };
+  pushBtn.onclick = async () => { const pat = document.getElementById('pat').value.trim(); const repo = document.getElementById('repo').value.trim(); if (!pat){ showNotification('Enter GitHub token', true); return; } if (!repo){ showNotification('Enter repository URL', true); return; } if (!window._outputs) { showNotification('Convert first', true); return; } try{ const res = await pushToGitHub({ pat, repo, files: window._outputs }); showNotification('Push complete'); }catch(e){ showNotification('Push failed: '+(e instanceof Error ? e.message : String(e)), true); } };
+
+        // rest of helper functions (parsers/generators) kept from previous file
+        function pushToGitHub({ pat, repo, files }){
+          return (async function(){
+            let match = repo.match(/github.com\/(.+?)\/?(\.git)?$/);
+            let path = repo; if (match) path = match[1];
+            const apiBase = `https://api.github.com/repos/${path}`;
+            const headers = { 'Authorization': 'token ' + pat, 'Content-Type': 'application/json' };
+            const results = [];
+            for (const name of Object.keys(files)){
+              const content = files[name];
+              const filePath = `design-tokens/${name}.${name === 'css' ? 'css' : (name==='dart'?'dart':(name==='kotlin'?'kt':'swift'))}`;
+              const getRes = await fetch(apiBase + '/contents/' + encodeURIComponent(filePath), { headers });
+              let sha = null; if (getRes.status === 200){ const j = await getRes.json(); sha = j.sha; }
+              const body = { message: `Add ${filePath} from design token converter`, content: btoa(unescape(encodeURIComponent(content))) };
+              if (sha) body.sha = sha;
+              const putRes = await fetch(apiBase + '/contents/' + encodeURIComponent(filePath), { method: 'PUT', headers, body: JSON.stringify(body) });
+              const putJson = await putRes.json(); results.push(putJson);
+            }
+            return { message: 'finished', details: results };
+          })();
+        }
+
+        function createZipAndDownload(){
+          if (!window._outputs) return showNotification('Convert first', true);
+          if (typeof JSZip === 'undefined'){
+            for (const name of Object.keys(window._outputs)){
+              const content = window._outputs[name];
+              const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+              const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+              const ext = name === 'css' ? 'css' : (name === 'dart' ? 'dart' : (name === 'kotlin' ? 'kt' : 'swift'));
+              a.download = `design-tokens.${ext}`; a.click();
+            }
+            return;
+          }
+          const zip = new JSZip();
+          for (const name of Object.keys(window._outputs)){
+            const ext = name === 'css' ? 'css' : (name === 'dart' ? 'dart' : (name === 'kotlin' ? 'kt' : 'swift'));
+            zip.file(`design-tokens.${ext}`, window._outputs[name]);
+          }
+          zip.generateAsync({ type: 'blob' }).then(function(content) { const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = 'design-tokens.zip'; a.click(); });
+        }
+
+        function btoa(str){ return window.btoa(unescape(encodeURIComponent(str))); }
+
+        function parseTokens(jsonStr){
+          try{ const obj = JSON.parse(jsonStr); const flat = {}; function walk(prefix, node){ if (typeof node !== 'object' || node === null) return; for (const k of Object.keys(node)){ const v = node[k]; const name = prefix? `${prefix}-${k}`: k; if (typeof v === 'string' || typeof v === 'number'){ flat[name] = v; } else if (typeof v === 'object' && v !== null){ if (Object.keys(v).length === 1 && (v.value || v.VAL || v.val)){ flat[name] = v.value || v.VAL || v.val; } else { walk(name, v); } } } } walk('', obj); return { ok: true, tokens: flat }; } catch (e){ return { ok: false, error: (e instanceof Error ? e.message : String(e)) }; }
+        }
+
+        function toKebabCase(s){ return String(s).replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[_\s]+/g, '-').replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase(); }
+        function toCamelCase(s){ return String(s).replace(/[-_\s]+(.)?/g, (m, c) => c ? c.toUpperCase() : '').replace(/^[A-Z]/, (m) => m.toLowerCase()).replace(/[^a-zA-Z0-9]/g, ''); }
+
+        function generateCSS(tokens){ const lines = [":root {"]; for (const [k,v] of Object.entries(tokens)){ lines.push(`  --${toKebabCase(k)}: ${formatCssValue(v)};`); } lines.push('}'); return lines.join('\n'); }
+        function generateDart(tokens){ const lines = ["import 'package:flutter/material.dart';", "", "class DesignTokens {", "  DesignTokens._();"]; for (const [k,v] of Object.entries(tokens)){ const name = toCamelCase(k); const parsed = parseColor(String(v)); if (parsed) lines.push(`  static const ${name} = Color(0x${parsed.hexArgb});`); else lines.push(`  static const ${name} = '${String(v).replace(/'/g, "\\'")}';`); } lines.push('}'); return lines.join('\n'); }
+        function generateKotlin(tokens){ const lines = ["import androidx.compose.ui.graphics.Color", "", "object DesignTokens {"]; for (const [k,v] of Object.entries(tokens)){ const name = toCamelCase(k); const parsed = parseColor(String(v)); if (parsed) lines.push(`  val ${name} = Color(0x${parsed.hexArgb})`); else lines.push(`  const val ${name} = \"${String(v)}\"`); } lines.push('}'); return lines.join('\n'); }
+        function generateSwift(tokens){ const lines = ["import SwiftUI", "struct DesignTokens {"]; for (const [k,v] of Object.entries(tokens)){ const name = toCamelCase(k); const parsed = parseColor(String(v)); if (parsed){ const { r,g,b,a } = parsed.rgba; const rf = (r/255).toFixed(3); const gf = (g/255).toFixed(3); const bf = (b/255).toFixed(3); const af = a.toFixed(3); lines.push(`  static let ${name} = Color(red: ${rf}, green: ${gf}, blue: ${bf}, opacity: ${af})`); } else { lines.push(`  static let ${name} = Color(\"${String(v)}\")`); } } lines.push('}'); return lines.join('\n'); }
+
+        function formatCssValue(v){ const parsed = parseColor(String(v)); if (parsed){ if (parsed.rgba.a === 1) return parsed.hex; const { r,g,b,a } = parsed.rgba; return `rgba(${r}, ${g}, ${b}, ${a})`; } return String(v); }
+
+        function parseColor(input){ if (!input) return null; const s = input.trim(); let m = s.match(/^#([0-9a-fA-F]{3,8})$/); if (m){ let hex = m[1]; if (hex.length === 3){ hex = hex.split('').map(x=>x+x).join(''); return hexRgbToObj(hex + 'ff'); } if (hex.length === 4){ hex = hex.split('').map(x=>x+x).join(''); return hexRgbToObj(hex); } if (hex.length === 6) return hexRgbToObj(hex + 'ff'); if (hex.length === 8) return hexRgbToObj(hex); } m = s.match(/^rgba?\(([^)]+)\)$/i); if (m){ const parts = m[1].split(',').map(p=>p.trim()); const r = parseInt(parts[0]); const g = parseInt(parts[1]); const b = parseInt(parts[2]); const a = parts[3] !== undefined ? parseFloat(parts[3]) : 1; const hex = [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('') + Math.round(a*255).toString(16).padStart(2,'0'); return { hex: '#' + hex.slice(0,6), hexArgb: toHexArgb(hex), rgba: { r,g,b, a } }; } return null; }
+
+        function hexRgbToObj(hex8){ const r = parseInt(hex8.slice(0,2),16); const g = parseInt(hex8.slice(2,4),16); const b = parseInt(hex8.slice(4,6),16); const a = parseInt(hex8.slice(6,8),16)/255; const hex = '#' + hex8.slice(0,6); return { hex, hexArgb: toHexArgb(hex8), rgba: { r,g,b,a } }; }
+        function toHexArgb(hex8){ const rr = hex8.slice(0,2); const gg = hex8.slice(2,4); const bb = hex8.slice(4,6); const aa = hex8.slice(6,8); return (aa + rr + gg + bb).toUpperCase(); }
+
+        function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":"&#39;"})[c]); }
+        function showNotification(text, isError){ const el = document.getElementById('notification'); el.textContent = text; el.style.background = isError ? 'var(--danger)' : 'var(--success)'; el.style.display = 'block'; el.style.opacity = '1'; setTimeout(()=>{ el.style.opacity = '0'; setTimeout(()=> el.style.display='none', 300); }, 2600); }
+      </script>
+      <script>
+        // measure and request panel resize so height fits content
+        function requestResize(){
+          const h = document.documentElement.scrollHeight;
+          parent.postMessage({ pluginMessage: { type: 'resize-panel', height: h } }, '*');
+        }
+        // request resize on load and after small changes
+        window.addEventListener('load', ()=> setTimeout(requestResize, 80));
+        new MutationObserver(()=> setTimeout(requestResize, 80)).observe(document.body, { childList:true, subtree:true, characterData:true });
+      </script>
+             <!-- JSZip library for creating ZIP files -->
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+    </body>
+    </html>

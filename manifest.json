@@ -1,0 +1,24 @@
+{
+  "name": "Design Token Converter",
+  "id": "design-token-converter-2024",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://api.github.com"
+    ]
+  },
+  "ui": {
+    "width": 380,
+    "height": 650,
+    "minWidth": 320,
+    "minHeight": 600,
+    "maxWidth": 450,
+    "maxHeight": 800,
+    "resizable": true
+  }
+}
